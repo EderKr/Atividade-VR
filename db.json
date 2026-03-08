@@ -1,6 +1,12 @@
 {
   "animais": [
-    { "id": 1, "nome": "Leão", "cor": "orange", "x": 0 },
-    { "id": 2, "nome": "Tigre", "cor": "yellow", "x": 2 }
-  ]
+    {
+      "id": "99e5",
+      "nome": "Jacare",
+      "especie": "Reptil",
+      "peso": 300,
+      "cor": "Verde"
+    }
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
 }

@@ -1,4 +1,4 @@
-const API = "http://localhost:3000/animais"
+const API_URL = 'https://localhost:3000.app.github.dev/animais';
 
 async function listarAnimais(){
 

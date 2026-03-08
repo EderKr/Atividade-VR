@@ -1,23 +1,354 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
+
 <head>
-<meta charset="UTF-8">
-<script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
+    <script src="https://cdn.rawgit.com/jeromeetienne/ar.js/2.2.0/aframe/build/aframe-ar.js"></script>
+    <title>CRUD de Animais em VR/AR</title>
 </head>
 
 <body>
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false">
 
-<button onclick="criarAnimal()">Criar Animal</button>
+        <!-- Camera com cursor -->
+        <a-entity camera look-controls>
+            <a-entity
+                cursor="fuse: true; fuseTimeout: 1000"
+                geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+                material="color: yellow; shader: flat"
+                position="0 0 -1"
+                raycaster="objects: .clickable">
+            </a-entity>
+        </a-entity>
 
-<a-scene>
+        <!-- Feedback -->
+        <a-text id="feedback"
+                value="Sistema carregado"
+                visible="false"
+                position="0 2.2 -8"
+                color="green"
+                align="center"
+                width="8">
+        </a-text>
 
-<a-camera position="0 1.6 5"></a-camera>
+        <!-- Titulo -->
+        <a-text value="CRUD de Animais em RA/RV"
+                position="-2.8 2.8 -8.5"
+                color="#222"
+                scale="1.2 1.2 1.2"
+                width="8">
+        </a-text>
 
-<a-entity id="listaAnimais"></a-entity>
+        <!-- Botoes CRUD -->
+        <a-box id="post-card" position="-3.2 -1.0 -7.2" color="#4CAF50" crud-action="POST" class="clickable" depth="0.35" height="0.45" width="0.9"></a-box>
+        <a-text value="POST" position="-3.45 -0.6 -7.2" color="#4CAF50" width="4"></a-text>
 
-</a-scene>
+        <a-box id="get-card" position="-1.1 -1.0 -7.2" color="#FFC107" crud-action="GET" class="clickable" depth="0.35" height="0.45" width="0.9"></a-box>
+        <a-text value="GET" position="-1.3 -0.6 -7.2" color="#FFC107" width="4"></a-text>
 
-<script src="script.js"></script>
+        <a-box id="patch-card" position="1.1 -1.0 -7.2" color="#673AB7" crud-action="PATCH" class="clickable" depth="0.35" height="0.45" width="1.15"></a-box>
+        <a-text value="PATCH" position="0.7 -0.6 -7.2" color="#673AB7" width="4"></a-text>
 
+        <a-box id="delete-card" position="3.2 -1.0 -7.2" color="#F44336" crud-action="DELETE" class="clickable" depth="0.35" height="0.45" width="0.9"></a-box>
+        <a-text value="DELETE" position="2.75 -0.6 -7.2" color="#F44336" width="4"></a-text>
+
+        <!-- Ficha do animal -->
+        <a-plane position="-3 1.0 -8.2"
+                 width="3.8"
+                 height="2.9"
+                 color="#EEEEEE"
+                 material="opacity: 0.95">
+            <a-text value="Ficha do Animal" position="-1.35 1.05 0.03" color="#000" width="5"></a-text>
+
+            <a-text value="Nome:" position="-1.45 0.58 0.03" color="#000" width="4"></a-text>
+            <a-text id="nome" value="________" position="-0.2 0.58 0.04" color="#000" width="4.5"></a-text>
+
+            <a-text value="Especie:" position="-1.45 0.20 0.03" color="#000" width="4"></a-text>
+            <a-text id="especie" value="________" position="-0.2 0.20 0.04" color="#000" width="4.5"></a-text>
+
+            <a-text value="Peso:" position="-1.45 -0.18 0.03" color="#000" width="4"></a-text>
+            <a-text id="peso" value="__ kg" position="-0.2 -0.18 0.04" color="#000" width="4.5"></a-text>
+
+            <a-text value="Cor:" position="-1.45 -0.56 0.03" color="#000" width="4"></a-text>
+            <a-text id="cor" value="________" position="-0.2 -0.56 0.04" color="#000" width="4.5"></a-text>
+        </a-plane>
+
+        <!-- Lista -->
+        <a-plane position="3 1.0 -8.2"
+                 width="4.2"
+                 height="3.2"
+                 color="#F8F8F8"
+                 material="opacity: 0.95">
+            <a-text value="Animais Cadastrados"
+                    position="-1.5 1.35 0.03"
+                    color="#000"
+                    width="5.2">
+            </a-text>
+
+            <a-entity id="animal-list" position="-1.2 0.85 0.04"></a-entity>
+        </a-plane>
+
+    </a-scene>
+
+    <script>
+        let selectedAnimalId = null;
+
+        const API_URL =
+            (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+                ? 'http://localhost:3000/animais'
+                : `${location.origin}/animais`;
+
+        const animalOptions = [
+            { nome: 'Leao', especie: 'Mamifero', peso: 190, cor: 'Dourado' },
+            { nome: 'Tigre', especie: 'Mamifero', peso: 220, cor: 'Laranja' },
+            { nome: 'Arara', especie: 'Ave', peso: 1, cor: 'Azul' },
+            { nome: 'Elefante', especie: 'Mamifero', peso: 5400, cor: 'Cinza' },
+            { nome: 'Jacare', especie: 'Reptil', peso: 300, cor: 'Verde' }
+        ];
+
+        console.log('API_URL usada:', API_URL);
+
+        function semAcento(texto) {
+            return String(texto || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function showMessage(message, color = 'green') {
+            const feedback = document.querySelector('#feedback');
+            feedback.setAttribute('value', semAcento(message));
+            feedback.setAttribute('color', color);
+            feedback.setAttribute('visible', 'true');
+
+            setTimeout(() => {
+                feedback.setAttribute('visible', 'false');
+            }, 3000);
+        }
+
+        function clearForm() {
+            document.querySelector('#nome').setAttribute('value', '________');
+            document.querySelector('#especie').setAttribute('value', '________');
+            document.querySelector('#peso').setAttribute('value', '__ kg');
+            document.querySelector('#cor').setAttribute('value', '________');
+        }
+
+        document.querySelectorAll('[crud-action]').forEach((el) => {
+            el.addEventListener('mouseenter', function () {
+                const action = this.getAttribute('crud-action');
+                handleCrudAction(action);
+            });
+        });
+
+        function handleCrudAction(action) {
+            switch (action) {
+                case 'POST':
+                    createRandomAnimal();
+                    break;
+                case 'GET':
+                    getAnimal(selectedAnimalId);
+                    break;
+                case 'PATCH':
+                    patchAnimal(selectedAnimalId);
+                    break;
+                case 'DELETE':
+                    deleteAnimal(selectedAnimalId);
+                    break;
+                default:
+                    console.log('Acao desconhecida');
+            }
+        }
+
+        function createRandomAnimal() {
+            const randomAnimal = animalOptions[Math.floor(Math.random() * animalOptions.length)];
+
+            fetch(API_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(randomAnimal)
+            })
+            .then(response => {
+                console.log('POST status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP no POST: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(() => {
+                showMessage('Animal criado!');
+                loadAnimalList();
+            })
+            .catch((error) => {
+                console.error('Erro ao criar animal:', error);
+                showMessage('Erro ao criar animal!', 'red');
+            });
+        }
+
+        function getAnimal(animalId) {
+            if (!animalId) {
+                showMessage('Selecione um animal da lista primeiro!', 'red');
+                return;
+            }
+
+            fetch(`${API_URL}/${animalId}`)
+                .then(response => {
+                    console.log('GET status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`Erro HTTP no GET: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    document.querySelector('#nome').setAttribute('value', semAcento(data.nome || '---'));
+                    document.querySelector('#especie').setAttribute('value', semAcento(data.especie || '---'));
+                    document.querySelector('#peso').setAttribute('value', `${data.peso || '--'} kg`);
+                    document.querySelector('#cor').setAttribute('value', semAcento(data.cor || '---'));
+
+                    showMessage(`Animal ${semAcento(data.nome)} carregado!`);
+                })
+                .catch((error) => {
+                    console.error('Erro ao carregar animal:', error);
+                    showMessage('Erro ao carregar animal!', 'red');
+                });
+        }
+
+        function patchAnimal(animalId) {
+            if (!animalId) {
+                showMessage('Selecione um animal da lista primeiro!', 'red');
+                return;
+            }
+
+            fetch(`${API_URL}/${animalId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Erro HTTP ao buscar animal atual: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(animalAtual => {
+                    const opcoesDiferentes = animalOptions.filter(opcao => opcao.nome !== animalAtual.nome);
+
+                    if (opcoesDiferentes.length === 0) {
+                        throw new Error('Nao ha outra opcao de animal disponivel');
+                    }
+
+                    const novoAnimal = opcoesDiferentes[Math.floor(Math.random() * opcoesDiferentes.length)];
+
+                    return fetch(`${API_URL}/${animalId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            nome: novoAnimal.nome,
+                            especie: novoAnimal.especie,
+                            peso: novoAnimal.peso,
+                            cor: novoAnimal.cor
+                        })
+                    });
+                })
+                .then(response => {
+                    console.log('PATCH status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`Erro HTTP no PATCH: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    clearForm();
+                    showMessage(`Animal trocado para ${semAcento(data.nome)}!`);
+                    loadAnimalList();
+                })
+                .catch((error) => {
+                    console.error('Erro ao trocar animal:', error);
+                    showMessage('Erro ao trocar animal!', 'red');
+                });
+        }
+
+        function deleteAnimal(animalId) {
+            if (!animalId) {
+                showMessage('Selecione um animal da lista primeiro!', 'red');
+                return;
+            }
+
+            fetch(`${API_URL}/${animalId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => {
+                console.log('DELETE status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`Erro HTTP no DELETE: ${response.status}`);
+                }
+                showMessage('Animal deletado!');
+                selectedAnimalId = null;
+                clearForm();
+                loadAnimalList();
+            })
+            .catch((error) => {
+                console.error('Erro ao deletar animal:', error);
+                showMessage('Erro ao deletar animal!', 'red');
+            });
+        }
+
+        function loadAnimalList() {
+            fetch(API_URL)
+                .then(response => {
+                    console.log('LIST status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`Erro HTTP ao listar: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(animais => {
+                    const animalListEntity = document.querySelector('#animal-list');
+                    animalListEntity.innerHTML = '';
+
+                    animais.forEach((animal, index) => {
+                        const animalCard = document.createElement('a-box');
+                        animalCard.setAttribute('color', '#FFFFFF');
+                        animalCard.setAttribute('depth', '0.1');
+                        animalCard.setAttribute('height', '0.32');
+                        animalCard.setAttribute('width', '1.8');
+                        animalCard.setAttribute('position', `0 ${-index * 0.42} 0`);
+                        animalCard.setAttribute('class', 'animal-card clickable');
+                        animalCard.setAttribute('id', `animal-${animal.id}`);
+                        animalCard.setAttribute('material', 'opacity: 0.9; shader: flat;');
+
+                        const animalText = document.createElement('a-text');
+                        animalText.setAttribute('value', semAcento(animal.nome));
+                        animalText.setAttribute('position', '0 0 0.08');
+                        animalText.setAttribute('color', 'black');
+                        animalText.setAttribute('align', 'center');
+                        animalText.setAttribute('width', '4.5');
+
+                        animalCard.appendChild(animalText);
+
+                        animalCard.addEventListener('mouseenter', () => {
+                            selectedAnimalId = animal.id;
+                            clearForm();
+
+                            document.querySelectorAll('.animal-card').forEach(card => {
+                                card.setAttribute('color', '#FFFFFF');
+                            });
+                            animalCard.setAttribute('color', '#C8E6C9');
+
+                            showMessage(`Animal ${semAcento(animal.nome)} selecionado. Use GET para visualizar.`);
+                        });
+
+                        animalListEntity.appendChild(animalCard);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao carregar a lista de animais:', error);
+                    showMessage('Erro ao listar animais!', 'red');
+                });
+        }
+
+        window.addEventListener('load', () => {
+            clearForm();
+            loadAnimalList();
+        });
+    </script>
 </body>
+
 </html>
