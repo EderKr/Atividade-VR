@@ -1,0 +1,6 @@
+{
+  "animais": [
+    { "id": 1, "nome": "Leão", "cor": "orange", "x": 0 },
+    { "id": 2, "nome": "Tigre", "cor": "yellow", "x": 2 }
+  ]
+}
