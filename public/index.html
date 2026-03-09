@@ -12,6 +12,16 @@
 <body>
     <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false">
 
+        <!-- Assets de imagens locais -->
+        <a-assets>
+            <img id="img-leao" src="./img/leao.jpg">
+            <img id="img-tigre" src="./img/tigre.jpg">
+            <img id="img-arara" src="./img/arara.jpg">
+            <img id="img-elefante" src="./img/elefante.jpg">
+            <img id="img-jacare" src="./img/jacare.jpg">
+            <img id="img-placeholder" src="./img/placeholder.jpg">
+        </a-assets>
+
         <!-- Camera com cursor -->
         <a-entity camera look-controls>
             <a-entity
@@ -32,15 +42,7 @@
                 align="center"
                 width="8">
         </a-text>
-
-        <!-- Titulo -->
-        <a-text value="CRUD de Animais em RA/RV"
-                position="-2.8 2.8 -8.5"
-                color="#222"
-                scale="1.2 1.2 1.2"
-                width="8">
-        </a-text>
-
+        
         <!-- Botoes CRUD -->
         <a-box id="post-card" position="-3.2 -1.0 -7.2" color="#4CAF50" crud-action="POST" class="clickable" depth="0.35" height="0.45" width="0.9"></a-box>
         <a-text value="POST" position="-3.45 -0.6 -7.2" color="#4CAF50" width="4"></a-text>
@@ -54,25 +56,42 @@
         <a-box id="delete-card" position="3.2 -1.0 -7.2" color="#F44336" crud-action="DELETE" class="clickable" depth="0.35" height="0.45" width="0.9"></a-box>
         <a-text value="DELETE" position="2.75 -0.6 -7.2" color="#F44336" width="4"></a-text>
 
-        <!-- Ficha do animal -->
+        <!-- Ficha do animal maior -->
         <a-plane position="-3 1.0 -8.2"
-                 width="3.8"
-                 height="2.9"
+                 width="4.9"
+                 height="3.7"
                  color="#EEEEEE"
                  material="opacity: 0.95">
-            <a-text value="Ficha do Animal" position="-1.35 1.05 0.03" color="#000" width="5"></a-text>
 
-            <a-text value="Nome:" position="-1.45 0.58 0.03" color="#000" width="4"></a-text>
-            <a-text id="nome" value="________" position="-0.2 0.58 0.04" color="#000" width="4.5"></a-text>
+            <a-text value="Ficha do Animal" position="-1.95 1.42 0.03" color="#000" width="6"></a-text>
 
-            <a-text value="Especie:" position="-1.45 0.20 0.03" color="#000" width="4"></a-text>
-            <a-text id="especie" value="________" position="-0.2 0.20 0.04" color="#000" width="4.5"></a-text>
+            <!-- Moldura da imagem -->
+            <a-plane position="-1.25 0.35 0.03"
+                     width="1.5"
+                     height="1.5"
+                     color="#D8D8D8">
+            </a-plane>
 
-            <a-text value="Peso:" position="-1.45 -0.18 0.03" color="#000" width="4"></a-text>
-            <a-text id="peso" value="__ kg" position="-0.2 -0.18 0.04" color="#000" width="4.5"></a-text>
+            <!-- Imagem quadrada -->
+            <a-image id="animal-photo"
+                     src="#img-placeholder"
+                     position="-1.25 0.35 0.04"
+                     width="1.35"
+                     height="1.35">
+            </a-image>
 
-            <a-text value="Cor:" position="-1.45 -0.56 0.03" color="#000" width="4"></a-text>
-            <a-text id="cor" value="________" position="-0.2 -0.56 0.04" color="#000" width="4.5"></a-text>
+            <!-- Dados -->
+            <a-text value="Nome:" position="-0.25 0.95 0.03" color="#000" width="4.5"></a-text>
+            <a-text id="nome" value="________" position="0.65 0.95 0.04" color="#000" width="5"></a-text>
+
+            <a-text value="Especie:" position="-0.25 0.45 0.03" color="#000" width="4.5"></a-text>
+            <a-text id="especie" value="________" position="0.65 0.45 0.04" color="#000" width="5"></a-text>
+
+            <a-text value="Peso:" position="-0.25 -0.05 0.03" color="#000" width="4.5"></a-text>
+            <a-text id="peso" value="__ kg" position="0.65 -0.05 0.04" color="#000" width="5"></a-text>
+
+            <a-text value="Cor:" position="-0.25 -0.55 0.03" color="#000" width="4.5"></a-text>
+            <a-text id="cor" value="________" position="0.65 -0.55 0.04" color="#000" width="5"></a-text>
         </a-plane>
 
         <!-- Lista -->
@@ -108,12 +127,24 @@
             { nome: 'Jacare', especie: 'Reptil', peso: 300, cor: 'Verde' }
         ];
 
-        console.log('API_URL usada:', API_URL);
-
         function semAcento(texto) {
             return String(texto || '')
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '');
+        }
+
+        function getAnimalImage(nome) {
+            const nomeNormalizado = semAcento(nome).toLowerCase();
+
+            const mapa = {
+                leao: '#img-leao',
+                tigre: '#img-tigre',
+                arara: '#img-arara',
+                elefante: '#img-elefante',
+                jacare: '#img-jacare'
+            };
+
+            return mapa[nomeNormalizado] || '#img-placeholder';
         }
 
         function showMessage(message, color = 'green') {
@@ -132,6 +163,7 @@
             document.querySelector('#especie').setAttribute('value', '________');
             document.querySelector('#peso').setAttribute('value', '__ kg');
             document.querySelector('#cor').setAttribute('value', '________');
+            document.querySelector('#animal-photo').setAttribute('src', '#img-placeholder');
         }
 
         document.querySelectorAll('[crud-action]').forEach((el) => {
@@ -169,7 +201,6 @@
                 body: JSON.stringify(randomAnimal)
             })
             .then(response => {
-                console.log('POST status:', response.status);
                 if (!response.ok) {
                     throw new Error(`Erro HTTP no POST: ${response.status}`);
                 }
@@ -193,7 +224,6 @@
 
             fetch(`${API_URL}/${animalId}`)
                 .then(response => {
-                    console.log('GET status:', response.status);
                     if (!response.ok) {
                         throw new Error(`Erro HTTP no GET: ${response.status}`);
                     }
@@ -204,6 +234,7 @@
                     document.querySelector('#especie').setAttribute('value', semAcento(data.especie || '---'));
                     document.querySelector('#peso').setAttribute('value', `${data.peso || '--'} kg`);
                     document.querySelector('#cor').setAttribute('value', semAcento(data.cor || '---'));
+                    document.querySelector('#animal-photo').setAttribute('src', getAnimalImage(data.nome));
 
                     showMessage(`Animal ${semAcento(data.nome)} carregado!`);
                 })
@@ -247,14 +278,18 @@
                     });
                 })
                 .then(response => {
-                    console.log('PATCH status:', response.status);
                     if (!response.ok) {
                         throw new Error(`Erro HTTP no PATCH: ${response.status}`);
                     }
                     return response.json();
                 })
                 .then(data => {
-                    clearForm();
+                    document.querySelector('#nome').setAttribute('value', semAcento(data.nome || '---'));
+                    document.querySelector('#especie').setAttribute('value', semAcento(data.especie || '---'));
+                    document.querySelector('#peso').setAttribute('value', `${data.peso || '--'} kg`);
+                    document.querySelector('#cor').setAttribute('value', semAcento(data.cor || '---'));
+                    document.querySelector('#animal-photo').setAttribute('src', getAnimalImage(data.nome));
+
                     showMessage(`Animal trocado para ${semAcento(data.nome)}!`);
                     loadAnimalList();
                 })
@@ -275,7 +310,6 @@
                 headers: { 'Content-Type': 'application/json' }
             })
             .then(response => {
-                console.log('DELETE status:', response.status);
                 if (!response.ok) {
                     throw new Error(`Erro HTTP no DELETE: ${response.status}`);
                 }
@@ -293,7 +327,6 @@
         function loadAnimalList() {
             fetch(API_URL)
                 .then(response => {
-                    console.log('LIST status:', response.status);
                     if (!response.ok) {
                         throw new Error(`Erro HTTP ao listar: ${response.status}`);
                     }
