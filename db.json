@@ -1,33 +1,4 @@
 {
-  "animais": [
-    {
-      "id": "99e5",
-      "nome": "Leao",
-      "especie": "Mamifero",
-      "peso": 190,
-      "cor": "Dourado"
-    },
-    {
-      "id": "8a5d",
-      "nome": "Arara",
-      "especie": "Ave",
-      "peso": 1,
-      "cor": "Azul"
-    },
-    {
-      "id": "e4df",
-      "nome": "Tigre",
-      "especie": "Mamifero",
-      "peso": 220,
-      "cor": "Laranja"
-    },
-    {
-      "id": "daed",
-      "nome": "Arara",
-      "especie": "Ave",
-      "peso": 1,
-      "cor": "Azul"
-    }
-  ],
+  "animais": [],
   "$schema": "./node_modules/json-server/schema.json"
 }
